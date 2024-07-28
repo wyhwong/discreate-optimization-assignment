@@ -25,7 +25,7 @@ def solve_it(input_data):
     decisions = [
         [
             pulp.LpVariable(f"is_node{i}_filled_color{j}", cat="Binary")
-            for j in range(node_count)
+            for j in range(i + 1)
         ]
         for i in range(node_count)
     ]
@@ -40,15 +40,15 @@ def solve_it(input_data):
 
     for i in range(node_count):
         # constraint: each node must be assigned exactly one color
-        problem += pulp.lpSum([decisions[i][j] for j in range(node_count)]) == 1
+        problem += pulp.lpSum(decisions[i][j] for j in range(i + 1)) == 1
 
         # constraint: n_colors_used must be at least the maximum color index used
-        for j in range(node_count):
+        for j in range(i + 1):
             problem += n_colors_used - decisions[i][j] * j >= 0
 
     for i, j in edges:
 
-        for k in range(node_count):
+        for k in range(min(i, j) + 1):
             # constraint: adjacent nodes must have different colors
             problem += decisions[i][k] + decisions[j][k] <= 1
 
@@ -63,10 +63,10 @@ def solve_it(input_data):
     else:
         print(f"Solver status: {pulp.LpStatus[solver_status]}")
 
-    color_matrix = [
+    bin_node_colors = [
         [int(decision.varValue) for decision in decisions[j]] for j in range(node_count)
     ]
-    solution = [color.index(1) for color in color_matrix]
+    solution = [color.index(1) for color in bin_node_colors]
 
     # prepare the solution in the specified output format
     output_data = str(node_count) + " " + str(0) + "\n"
