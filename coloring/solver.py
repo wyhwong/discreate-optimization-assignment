@@ -1,6 +1,36 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import pulp
+import networkx as nx
+
+
+def greedy_coloring_initial_solution(node_count, edges):
+    """Uses a greedy algorithm to find an initial coloring solution.
+    The algorithm tries different strategies to find the best coloring
+    """
+
+    G = nx.Graph()
+    G.add_edges_from(edges)
+
+    best_search = None
+    n_color_used = node_count
+
+    for strategy in [
+        "largest_first",
+        "smallest_last",
+        "random_sequential",
+        "independent_set",
+        "connected_sequential_bfs",
+        "connected_sequential_dfs",
+        "saturation_largest_first",
+    ]:
+        coloring = nx.coloring.greedy_color(G, strategy=strategy)
+        solution = [coloring[i] for i in range(node_count)]
+        if max(solution) < n_color_used:
+            n_color_used = max(solution)
+            best_search = solution
+
+    return best_search
 
 
 def check_solver_status(solver_status):
@@ -119,10 +149,14 @@ def solve_it(input_data):
         parts = line.split()
         edges.append((int(parts[0]), int(parts[1])))
 
-    if node_count**2 - (edge_count + node_count) > 0:
-        solution = get_optimal_solution_1(node_count, edges)
-    else:
-        solution = get_optimal_solution_2(node_count, edges)
+    # NOTE: While we could use LP to solve the problem theorethically,
+    #       it is not practical for large instances due to the huge number of constraints and variables
+    # if node_count**2 - (edge_count + node_count) > 0:
+    #     solution = get_optimal_solution_1(node_count, edges)
+    # else:
+    #     solution = get_optimal_solution_2(node_count, edges)
+
+    solution = greedy_coloring_initial_solution(node_count, edges)
 
     # prepare the solution in the specified output format
     output_data = str(node_count) + " " + str(0) + "\n"
